@@ -122,3 +122,45 @@ def get_me(token):
         }
     '''
     return _make_requests(token, make='basic', verbs='get', method='me')
+
+# Edit current bot info
+def patch_me(token):
+    '''
+    HTTP_verbs='patch'
+    request_url='https://botapi.tamtam.chat/me'
+    Edits current bot info. 
+    Fill only the fields you want to update. 
+    All remaining fields will stay untouched
+    REQUEST BODY SCHEMA: application/json
+        {
+        'name':(optional, string [1..64]characters, Visible name of bot)
+        'username':(optional, string [4..64]characters, Bot unique identifier. It can be any string 4-64 characters long containing any digit, letter or special symbols: "-" or "_". It must starts with a letter )
+        'description':(optional, string [1..16000]characters, Bot description up to 16k characters long)
+        'commands:(optional, array of object, Commands supported by bot. Pass empty list if you want to remove commands
+            Array [
+                name: string [ 1 .. 64 ]characters, Command name
+                description: optional, string [1..128]characters Optional command description
+                ])
+        'photo':(optional, object, Request to set bot photo
+            'url':(optional, string, Any external image URL you want to attach)
+            'token':(optional string, Nullable Token of any existing attachment)
+            'photos':(optional, object, Tokens were obtained after uploading images
+               'property name':(optional, object photo token
+                    'token':(string, Encoded information of uploaded image))))
+        }
+    RESPONSE: application/json
+    {
+        user_id:(intger, user identifier)
+        name:(string, user visible name)
+        username:(string, Unique public user name. Can be null if user is not accessible or it is not set)
+        avatar_url:(optional, string, URL of avatar)
+        full_avatar_url:(optional, string, URL of avatar of a bigger size)
+        commands:(optional, array of object, commands supported by bot
+            Array [
+                name:(string [1..64]characters, command name)
+                description:(optional, string [1..128]characters, command description)
+            ])
+        description:(optional, string <= 16000 characers, bot description)
+    }
+    '''
+    return _make_requests(token, make='basic', verbs='patch', method='me')
