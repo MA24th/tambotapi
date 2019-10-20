@@ -95,3 +95,30 @@ def _check_request(token, r, make, verbs):
         raise RuntimeError("Service Unavailable!!!")
     else:
         raise ValueError('Error Unspecified!!!')
+
+
+# bots
+# Get current bot info
+def get_me(token):
+    '''
+    HTTP_verbs='get'
+    request_url='https://botapi.tamtam.chat/me'
+    Returns info about current bot. 
+    Current bot can be identified by access token. 
+    Method returns bot identifier, name and avatar (if any)
+    RESPONSE: application/json
+        {
+        user_id:(integer, users identifier),
+        name:(sting, users visible name),
+        username:(string, Unique public user name. Can be null if user is not accessible or it is not set),
+        avatar_url:(optional, string, URL of avatar),
+        full_avatar_url:(optional, string, URL of avatar of a bigger size),
+        commands:(optional, array of object, commands supported by bot
+                Array [
+                    name:(strng [1..64]characters, command name) 
+                    descripton:(optional, string [1..128]characters, command description)
+                ]),
+        description:(optional, sting <= 16000 characters, bot description)
+        }
+    '''
+    return _make_requests(token, make='basic', verbs='get', method='me')
