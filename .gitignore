@@ -1,3 +1,5 @@
 # Folders
 .vscode
+.pytest_*
+tests/__pycache__
 data
