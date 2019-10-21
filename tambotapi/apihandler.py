@@ -135,10 +135,10 @@ class ApiException(Exception):
         self.result = result
 
 
-def get_me(token):
+def get_bot_info(token):
     '''Get current bot info
     HTTP_verbs='get'
-    request_url='https://botapi.tamtam.chat/me'
+    request_url='https://botapi.tamtam.chat/me?access_token={}'
     Returns info about current bot. 
     Current bot can be identified by access token. 
     Method returns bot identifier, name and avatar (if any)
@@ -157,13 +157,25 @@ def get_me(token):
         description:(optional, sting <= 16000 characters, bot description)
         }
     '''
-    return _make_requests(token, make='basic', verbs='get', method='me')
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'get'
+    method = r'me'
+    base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
+    request_url = base_url.format(method, token)
+
+    payload = None
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
 
 
-def patch_me(token, name=None, username=None, description=None, commands=None, photo=None):
+def edit_bot_info(token, name=None, username=None, description=None, commands=None, photo=None):
     '''Edit current bot info
     HTTP_verbs='patch'
-    request_url='https://botapi.tamtam.chat/me'
+    request_url='https://botapi.tamtam.chat/me?access_token={}'
     Edits current bot info. 
     Fill only the fields you want to update. 
     All remaining fields will stay untouched
@@ -199,6 +211,13 @@ def patch_me(token, name=None, username=None, description=None, commands=None, p
         description:(optional, string <= 16000 characers, bot description)
     }
     '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'patch'
+    method = r'me'
+    base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
+    request_url = base_url.format(method, token)
+
     payload = {}
     if name:
         payload['name'] = name
@@ -210,13 +229,17 @@ def patch_me(token, name=None, username=None, description=None, commands=None, p
         payload['commands'] = commands
     if photo:
         payload['photo'] = photo
-    return _make_requests(token, make='basic', verbs='patch', method='me', params=payload)
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
 
  
 def get_chats(token, count=None, marker=None):
     '''get all chats
     HTTP_verbs='get'
-    request_url='https://botapi.tamtam.chat/chats'
+    request_url='https://botapi.tamtam.chat/chats?access_token={}'
     Returns information about chats that bot participated in: 
         a result list and marker points to the next page
     QUERY PARAMETERS: application/json
@@ -252,18 +275,29 @@ def get_chats(token, count=None, marker=None):
         marker:(integer, Reference to the next page of requested chats)
     }
     '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'patch'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
+    request_url = base_url.format(method, token)
+
     payload = {}
     if count:
         payload['count'] = count
     if marker:
         payload['marker'] = marker
-    return _make_requests(token, make='basic', method='chats', verbs='get', params=payload)
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
 
 
-def get_chat(token, chat_id):
+def get_chat_info(token, chat_id):
     '''Get chat
     HTTP_verbs='get'
-    request_url='https://botapi.tamtam.chat/chats/{chatId}'    
+    request_url='https://botapi.tamtam.chat/chats/{chatId}?access_token={}'    
     Returns info about chat.
     PATH PARAMETERS: application/json
     {
@@ -294,13 +328,25 @@ def get_chat(token, chat_id):
 
     }
     '''
-    return _make_requests(token, make='chats', method='chats', chatId=chat_id, verbs='get')
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'get'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+
+    payload = None
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
 
 
-def patch_chat(token, chat_id, icon, title):
+def edit_chat_info(token, chat_id, icon, title):
     '''Edit chat info
     HTTP_verbs='patch'
-    request_url='https://botapi.tamtam.chat/chats/{chatId}'    
+    request_url='https://botapi.tamtam.chat/chats/{chatId}?access_token={}'    
     Edits chat info: title, icon, etc…
     PATH PARAMETERS: application/json
     {
@@ -341,18 +387,29 @@ def patch_chat(token, chat_id, icon, title):
 
     }
     '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'patch'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+
     payload = {}
     if icon:
         payload['icon'] = icon
     if title:
         payload['title'] = title
-    return _make_requests(token, make='chats', verbs='patch', method='chats', chatId=chat_id, params=payload)
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
 
 
-def post_chat(token, chat_id, action):
+def send_chat_action(token, chat_id, action):
     '''Send Action
     HTTP_verbs='post'
-    request_url='https://botapi.tamtam.chat/chats/{chatId}/actions'    
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/actions?access_token={}'    
     send bot action to chat
     PATH PARAMTERS: application/json
     {
@@ -374,6 +431,7 @@ def post_chat(token, chat_id, action):
     method = r'chats'
     base_url = 'https://botapi.tamtam.chat/{0}/{1}/action?access_token={2}'
     request_url = base_url.format(method, chat_id, token)
+
     payload = {'action': str(action)}
 
     logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
@@ -386,7 +444,7 @@ def post_chat(token, chat_id, action):
 def get_chat_membership(token, chat_id):
     '''Get Chat Membership
     HTTP_verbs='get'
-    request_url='https://botapi.tamtam.chat/chats/{chatId}/members/me'    
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/members/me?access_token={}'    
     returns chat membership info for current bot
     PATH PARAMTERS: application/json
     {
@@ -410,10 +468,208 @@ def get_chat_membership(token, chat_id):
     read_timeout = READ_TIMEOUT
     verbs = r'get'
     method = r'chats'
-    base_url = 'https://botapi.tamtam.chat/{0}/{1}/member/me?access_token={2}'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}/members/me?access_token={2}'
     request_url = base_url.format(method, chat_id, token)
 
+    payload = None
+
     logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    result = _get_req_session().request(verbs, request_url, timeout=(connect_timeout, read_timeout), parmas=payload, proxies=proxy)
     logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
     return _check_request(result, method)
+
+
+def leave_chat(token, chat_id):
+    '''leave chat
+    HTTP_verbs='delete'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/members/me?access_token={}'    
+    Removes bot from chat members.
+    PATH PARAMTERS: application/json
+    {
+        chatId:(integer, chat identifier)
+    }
+    RESPONSE: application/json
+    {
+        success:(boolean, true if request was successful, false otherwise)
+        message:(optional, string, explanatory message if the result is not successful)
+    }    
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'delete'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}/members/me?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+
+    payload = None
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, timeout=(connect_timeout, read_timeout), params=payload, proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
+
+
+def get_chat_admins(token, chat_id):
+    '''Get chat admins
+    HTTP_verbs='get'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/members/admins?access_token={}'    
+    Returns all chat administrators. Bot must be adminstrator in requested chat.
+    PATH PARAMTERS: application/json
+    {
+        chatId:(integer, chat identifier)
+    }
+    RESPONSE: application/json
+    {
+        members:(array of object, Participants in chat with time of last activity. Visible only for chat admins
+            Array [
+                user_id:(integer, users identifier)
+                name:(string, users visible name)
+                username,(string, Unique public user name. Can be null if user is not accessible or it is not set)
+                avatar_url:(string, url of avatar)
+                full_avatar_url:(string, URL of avatar of a bigger size)
+                last_access_time:(integer)
+                is_owner:(boolean)
+                is_admin:(boolean)
+                join_time:(integer)
+                permissions:(array of string, items Enum: 'read_all_messages', 'add_remove_members', 'add_admins', 'change_chat_info', 'pin_message', 'write'. permissions in chat if member is admin. null otherwise)
+
+            ])
+        marker:(optional, integer, Pointer to the next data page)
+    }    
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'get'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}/members/admins?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+    
+    payload = None
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, timeout=(connect_timeout, read_timeout), params=payload, proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
+
+
+def get_members(token, chat_id, user_ids=None, marker=None, count=None):
+    '''Get members
+    HTTP_verbs='get'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/members?access_token={}'    
+    Returns users participated in chat.
+    PATH PARAMTERS: application/json
+    {
+        chatId:(integer, chat identifier)
+    }
+    QUERY PARAMETERS:
+    {
+        user_ids:(optional, array of integer, Comma-separated list of users identifiers to get their membership. When this parameter is passed, both count and marker are ignored)
+        marker:(optional, integer, Marker)
+        count:(optional, integer [1..100], default '20', count)
+    }
+    RESPONSE: application/json
+    {
+        members:(array of object, Participants in chat with time of last activity. Visible only for chat admins
+            Array [
+                user_id:(integer, users identifier)
+                name:(string, users visible name)
+                username,(string, Unique public user name. Can be null if user is not accessible or it is not set)
+                avatar_url:(string, url of avatar)
+                full_avatar_url:(string, URL of avatar of a bigger size)
+                last_access_time:(integer)
+                is_owner:(boolean)
+                is_admin:(boolean)
+                join_time:(integer)
+                permissions:(array of string, items Enum: 'read_all_messages', 'add_remove_members', 'add_admins', 'change_chat_info', 'pin_message', 'write'. permissions in chat if member is admin. null otherwise)
+
+            ])
+        marker:(optional, integer, Pointer to the next data page)
+    }    
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'get'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}/members?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+
+    payload = {}
+    if user_ids:
+        payload['user_ids'] = user_ids
+    if marker:
+        payload['marker'] = marker
+    if count:
+        payload['count'] = count
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
+
+def add_members(token, chat_id, user_ids):
+    '''Add members
+    HTTP_verbs='post'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/members?access_token={}'    
+    Adds members to chat. Additional permissions may require.
+    PATH PARAMTERS: application/json
+    {
+        chatId:(integer, chat identifier)
+    }
+    REQUEST BODY SCHEMA:
+    {
+        user_ids:(array of integer, Comma-separated list of users identifiers)
+    }
+    RESPONSE: application/json
+    {
+        success:(boolean, true if request was successful. false otherwis)
+        message:(optional, string, Explanatory message if the result is not successful)
+    }    
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'post'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}/members?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+
+    payload = {'user_ids':user_ids}
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)    
+
+
+def remove_member(token, chat_id, user_id):
+    '''Remove member
+    HTTP_verbs='delete'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/members?access_token={}'    
+    Removes member from chat. Additional permissions may require.
+    PATH PARAMTERS: application/json
+    {
+        chatId:(integer, chat identifier)
+    }
+    QUERY PARAMETERS:
+    {
+        user_id:(integer, user id to remove from chat)
+    }
+    RESPONSE: application/json
+    {
+        success:(boolean, true if request was successful. false otherwis)
+        message:(optional, string, Explanatory message if the result is not successful)
+    }    
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'delete'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}/members?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+
+    payload = {'user_id':user_id}
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
+
