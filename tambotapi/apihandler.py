@@ -63,19 +63,23 @@ def _make_requests(token, make=None, verbs=None, method=None, chatId=None, param
     if make == 'basic':
         base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
         request_url = base_url.format(method, token)
-        logger.debug("Request: method={0} url={1} params={2} files={3}".format(method, request_url, params, files))
+        logger.debug("Request: method={0} url={1} params={2} files={3}".format(
+            method, request_url, params, files))
         result = _get_req_session().request(verbs, request_url, params=params, files=files,
                                             timeout=(connect_timeout, read_timeout), proxies=proxy)
-        logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+        logger.debug("The server returned: '{0}'".format(
+            result.text.encode('utf8')))
         return _check_request(result, method)
 
     elif make == 'chats':
         base_url = 'https://botapi.tamtam.chat/{0}/{1}?access_token={2}'
         request_url = base_url.format(method, chatId, token)
-        logger.debug("Request: method={0} url={1} params={2} files={3}".format(method, request_url, params, files))
+        logger.debug("Request: method={0} url={1} params={2} files={3}".format(
+            method, request_url, params, files))
         result = _get_req_session().request(verbs, request_url, params=params, files=files,
                                             timeout=(connect_timeout, read_timeout), proxies=proxy)
-        logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+        logger.debug("The server returned: '{0}'".format(
+            result.text.encode('utf8')))
         return _check_request(result, method)
 
     else:
@@ -120,6 +124,8 @@ def _no_encode(func):
     return wrapper
 
 # ApiException
+
+
 class ApiException(Exception):
     """
     This class represents an Exception thrown when a call to the TamTam API fails.
@@ -166,9 +172,12 @@ def get_bot_info(token):
 
     payload = None
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
 
@@ -230,12 +239,15 @@ def edit_bot_info(token, name=None, username=None, description=None, commands=No
     if photo:
         payload['photo'] = photo
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
- 
+
 def get_chats(token, count=None, marker=None):
     '''get all chats
     HTTP_verbs='get'
@@ -288,9 +300,12 @@ def get_chats(token, count=None, marker=None):
     if marker:
         payload['marker'] = marker
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
 
@@ -337,9 +352,12 @@ def get_chat_info(token, chat_id):
 
     payload = None
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
 
@@ -400,9 +418,12 @@ def edit_chat_info(token, chat_id, icon, title):
     if title:
         payload['title'] = title
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
 
@@ -434,12 +455,14 @@ def send_chat_action(token, chat_id, action):
 
     payload = {'action': str(action)}
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
-    
-    
+
 
 def get_chat_membership(token, chat_id):
     '''Get Chat Membership
@@ -473,9 +496,12 @@ def get_chat_membership(token, chat_id):
 
     payload = None
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, timeout=(connect_timeout, read_timeout), parmas=payload, proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, timeout=(
+        connect_timeout, read_timeout), parmas=payload, proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
 
@@ -503,9 +529,12 @@ def leave_chat(token, chat_id):
 
     payload = None
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, timeout=(connect_timeout, read_timeout), params=payload, proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, timeout=(
+        connect_timeout, read_timeout), params=payload, proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
 
@@ -543,12 +572,15 @@ def get_chat_admins(token, chat_id):
     method = r'chats'
     base_url = 'https://botapi.tamtam.chat/{0}/{1}/members/admins?access_token={2}'
     request_url = base_url.format(method, chat_id, token)
-    
+
     payload = None
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, timeout=(connect_timeout, read_timeout), params=payload, proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, timeout=(
+        connect_timeout, read_timeout), params=payload, proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
 
@@ -601,10 +633,14 @@ def get_members(token, chat_id, user_ids=None, marker=None, count=None):
     if count:
         payload['count'] = count
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
+
 
 def add_members(token, chat_id, user_ids):
     '''Add members
@@ -632,12 +668,15 @@ def add_members(token, chat_id, user_ids):
     base_url = 'https://botapi.tamtam.chat/{0}/{1}/members?access_token={2}'
     request_url = base_url.format(method, chat_id, token)
 
-    payload = {'user_ids':user_ids}
+    payload = {'user_ids': user_ids}
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
-    return _check_request(result, method)    
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
+    return _check_request(result, method)
 
 
 def remove_member(token, chat_id, user_id):
@@ -666,10 +705,86 @@ def remove_member(token, chat_id, user_id):
     base_url = 'https://botapi.tamtam.chat/{0}/{1}/members?access_token={2}'
     request_url = base_url.format(method, chat_id, token)
 
-    payload = {'user_id':user_id}
+    payload = {'user_id': user_id}
 
-    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
-    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
-    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
     return _check_request(result, method)
 
+
+def get_messages(token, chat_id=None, message_ids=None, chat_from=None, to=None, count=None):
+    '''Get messages
+    HTTP_verbs='get'
+    request_url='https://botapi.tamtam.chat/messages?access_token={}'    
+    Returns messages in chat: result page and marker referencing to the next page. 
+    Messages traversed in reverse direction so the latest message in chat will be first in result array. 
+    Therefore if you use 'from' and 'to' parameters, 'to' must be less than 'from'
+    QUERY PARAMETERS:
+    {
+        chat_id:(optional, integer, chat identifier to get messages in chat)
+        message_ids:(optional, array of string, comma-separated list of message ids to get)
+        from:(optional, integer, start time for requested messages)
+        to:(optional, integer, end time for requested messages)
+        count:(optional, integer [1..100], maximum amount of messages in response)
+    }
+    RESPONSE: application/json
+    {
+        messages:(array of object, list of messages
+            Array [
+                sender:(optional, object, user who sent this message, can be null if message has been posted on behalf of a channel
+                    user_id:(integer, user identifier)
+                    name:(string, users visible name)
+                    username:(string, unique public user name. can be null if user is not accessible or it is not set))
+                recipient:(object, message recipient, could be user of chat
+                    chat_id:(integer, chat identifier)
+                    chat_type:(any, Enum:'dialog', 'chat', 'channel', chat type)
+                    user_id:(user identifier, if message was sent to user))
+                timestamp:(integer, Unix-time when message was created)
+                link:(optional, object, forwarder or replied message
+                    type:(string, Enum: 'forward', 'reply', type of linked message)
+                    sender:(optional, object, user sent this message. can be null if message has been posted on behalf of a channel
+                        user_id:(integer, users identifier)
+                        name:(string, users visible name)
+                        username:(string, Unique public user name. Can be null if user is not accessible or it is not set)))
+                    chat_id:(optional, integer, Chat where message has been originally posted. For forwarded messages only)
+                    message:(object, schema representing body of message
+                        mid:(string, Unique identifier of message)
+                        seq:(integer, Sequence identifier of message in chat)
+                        text:(string, message text)
+                        attachments:(array of object, Message attachments. Could be one of Attachment type. can be image, video, audio, file, contact, sticker, share, location, inline_keyboard)
+                        reply_to:(Deprected, optional, string, in case this message is reply to another, it is the unique identifier of the replied message)))   
+                body:(bject, Body of created message. Tex + attachments. could be null if message contains only forwarded message)
+                stat:(optional, object, message statics. available only for channels in GET:/message context)
+                url:(optional, string, message public url, can be null for dialogs or non-public chats/channel)]
+    } 
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'get'
+    method = r'messages'
+    base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
+    request_url = base_url.format(method, token)
+
+    payload = {}
+    if chat_id:
+        payload['chatId'] = chat_id
+    if message_ids:
+        payload['message_ids'] = message_ids
+    if chat_from:
+        payload['from'] = chat_from
+    if to:
+        payload['to'] = to
+    if count:
+        payload['count'] = count
+
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
+    return _check_request(result, method)
