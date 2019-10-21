@@ -1,17 +1,27 @@
 import requests
 import json
+try:
+    from requests.packages.urllib3 import fields
 
+    format_header_param = fields.format_header_param
+except ImportError:
+    format_header_param = None
 
-
-def _make_requests(token, make=None, verbs=None, method=None, chatid=None):
+CONNECT_TIMEOUT = 3.5
+READ_TIMEOUT = 9999
+def _make_requests(token, make=None, verbs=None, method=None, params=None, files=None, chatid=None):
     '''
-    HTTP verbs
+    Makes a request to the TamTam API.
+    token: The bot's API token. (Created with @PrimeBot)
+    params: Optional parameters. Should be a dictionary with key-value pairs.
+    files: Optional files.
+    HTTP verbs:
         DELETE — deleting resources
         GET — getting resources, parameters are transmitted via URL
         PATCH — patching resources
         POST — creation of resources (for example, sending new messages)
         PUT — editing resources
-    BOT method
+    BOT method: Name of the API method to be called
         me
         chats 
             -chatid [Requested chat identifie]
@@ -20,24 +30,31 @@ def _make_requests(token, make=None, verbs=None, method=None, chatid=None):
         subscriptions
         updates
         upload
+    :return: The result parsed to a JSON dictionary.
     '''
+    if files and format_header_param:
+        fields.format_header_param = _no_encode(format_header_param)
+    if params:
+        if 'timeout' in params: read_timeout = params['timeout'] + 10
+        if 'connect-timeout' in params: connect_timeout = params['connect-timeout'] + 10
+
     if make == 'basic':
         base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
         make_request = base_url.format(method, token)
         if verbs == 'delete':
-            r = requests.delete(make_request)
+            r = requests.delete(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'get':
-            r = requests.get(make_request)
+            r = requests.get(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'patch':
-            r = requests.patch(make_request)
+            r = requests.patch(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'post':
-            r = requests.post(make_request)
+            r = requests.post(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'put':
-            r = requests.put(make_request)
+            r = requests.put(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         else:
             raise TypeError(f"verbs '{verbs}' type Error!!!")
@@ -46,19 +63,19 @@ def _make_requests(token, make=None, verbs=None, method=None, chatid=None):
         base_url = 'https://botapi.tamtam.chat/{0}/{1}?access_token={2}'
         make_request = base_url.format(method, chatid, token)
         if verbs == 'delete':
-            r = requests.delete(make_request)
+            r = requests.delete(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'get':
-            r = requests.get(make_request)
+            r = requests.get(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'patch':
-            r = requests.patch(make_request)
+            r = requests.patch(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'post':
-            r = requests.post(make_request)
+            r = requests.post(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'put':
-            r = requests.put(make_request)
+            r = requests.put(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         else:
             raise TypeError(f"verbs '{verbs}' type Error!!!")
@@ -96,6 +113,15 @@ def _check_request(token, r, make, verbs):
     else:
         raise ValueError('Error Unspecified!!!')
 
+# _no_encode
+def _no_encode(func):
+    def wrapper(key, val):
+        if key == 'filename':
+            return u'{0}={1}'.format(key, val)
+        else:
+            return func(key, val)
+
+    return wrapper
 
 # bots
 # Get current bot info
@@ -124,7 +150,7 @@ def get_me(token):
     return _make_requests(token, make='basic', verbs='get', method='me')
 
 # Edit current bot info
-def patch_me(token):
+def patch_me(token, name=None, username=None, description=None, commands=None, photo=None):
     '''
     HTTP_verbs='patch'
     request_url='https://botapi.tamtam.chat/me'
@@ -163,4 +189,62 @@ def patch_me(token):
         description:(optional, string <= 16000 characers, bot description)
     }
     '''
-    return _make_requests(token, make='basic', verbs='patch', method='me')
+    payload = {}
+    if name:
+        payload['name'] = name
+    if username:
+        payload['username'] = username
+    if description:
+        payload['description'] = description
+    if commands:
+        payload['commands'] = commands
+    if photo:
+        payload['photo'] = photo
+
+    return _make_requests(token, make='basic', verbs='patch', method='me', params=payload)
+
+# Chats
+# get all chats
+def get_chats(token, count=None, marker=None):
+    '''
+    Returns information about chats that bot participated in: 
+        a result list and marker points to the next page
+    QUERY PARAMETERS:
+    {
+        count:(optional, integer [1..100] default 50, numaber of chats requested)
+        marker:(optional, integer, points to next data page, null for the first page)
+    }
+    RESPONSE: application/json
+    {
+        chats:(array of object, list of requested chats
+            Array[
+                chat_id:(integer, chats identifier)
+                type:(any, Enum:'dialog','chat','channel', type of chat, one of:dialog, chat, channel)
+                status:(any, Enum:'active', 'removed', 'left', 'closed', 'suspended', chat status one of: active: bot is active member of chat, removed: bot was kicked, left: bot intentionally left chat, closed: chat was closed)
+                title:(string, visible title of chat, can be null for dialogs)
+                icon:(object, icon of chat
+                    url:(string, url of image))
+                last_event_time:(integer, time of last event occurred if chat)
+                participants_count:(integer, number of people in chat, always 2 for dialog chat type)
+                owner_id:(optional, integer, identifier of chat owner, visible only for chat admins)
+                participants:(optional, object, participants in chat with time of last activity, can be null when you request list of chats, visible for chat admins only
+                    property_name:(optional, integer))
+                is_puplic:(boolean, is current chat publicly availabel, always false for dialogs)
+                link:(optional, string, link of chat if it is public)
+                description:(any, chat description)
+                dialog_with_user:(optional, object, another user in conversation for dialog type chats only
+                    user_id:(integer, users identifier)
+                    name:(string, users visible name)
+                    username:(string, Unique public user name. Can be null if user is not accessible or it is not set)
+                    avatar_url:(optional, string, url of avatar)
+                    full_avatar_url:(optional, string, url of avatar of a bigger size)    
+                    )])
+        marker:(integer, Reference to the next page of requested chats)
+    }
+    '''
+    payload = {}
+    if count:
+        payload['count'] = count
+    if marker:
+        payload['marker'] = marker
+    return _make_requests(token, make='basic', verbs='get', method='chats', params=payload)
