@@ -10,7 +10,7 @@ def read(filename):
 
 setup(name='tambotapi',
       version='0.1.0',
-      description='TamTam Bot API Framework. ',
+      description='TamTam Bot API Framework',
       long_description=read('README.rst'),
       long_description_content_type="text/x-rst",
       author='Mustafa Asaad',
