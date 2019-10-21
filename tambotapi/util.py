@@ -19,6 +19,8 @@ logger = logging.getLogger('telebotapi')
 thread_local = threading.local()
 
 # WorkerThread
+
+
 class WorkerThread(threading.Thread):
     count = 0
 
@@ -60,7 +62,8 @@ class WorkerThread(threading.Thread):
             except Queue.Empty:
                 pass
             except Exception as e:
-                logger.error(type(e).__name__ + " occurred, args=" + str(e.args) + "\n" + traceback.format_exc())
+                logger.error(type(e).__name__ + " occurred, args=" +
+                             str(e.args) + "\n" + traceback.format_exc())
                 self.exc_info = sys.exc_info()
                 self.exception_event.set()
 
@@ -82,12 +85,14 @@ class WorkerThread(threading.Thread):
     def stop(self):
         self._running = False
 
+
 # ThreadPool
 class ThreadPool:
 
     def __init__(self, num_threads=2):
         self.tasks = Queue.Queue()
-        self.workers = [WorkerThread(self.on_exception, self.tasks) for _ in range(num_threads)]
+        self.workers = [WorkerThread(self.on_exception, self.tasks)
+                        for _ in range(num_threads)]
         self.num_threads = num_threads
 
         self.exception_event = threading.Event()
@@ -114,6 +119,153 @@ class ThreadPool:
         for worker in self.workers:
             worker.join()
 
+
+# AsyncTask
+class AsyncTask:
+    def __init__(self, target, *args, **kwargs):
+        self.target = target
+        self.args = args
+        self.kwargs = kwargs
+
+        self.done = False
+        self.thread = threading.Thread(target=self._run)
+        self.thread.start()
+
+    def _run(self):
+        try:
+            self.result = self.target(*self.args, **self.kwargs)
+        except:
+            self.result = sys.exc_info()
+        self.done = True
+
+    def wait(self):
+        if not self.done:
+            self.thread.join()
+        if isinstance(self.result, BaseException):
+            six.reraise(self.result[0], self.result[1], self.result[2])
+        else:
+            return self.result
+
+
+# async_dec
+def async_dec():
+    def decorator(fn):
+        def wrapper(*args, **kwargs):
+            return AsyncTask(fn, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+# is_string
+def is_string(var):
+    return isinstance(var, string_types)
+
+
+# is_command
+def is_command(text):
+    """
+    Checks if `text` is a command. Telegram chat commands start with the '/' character.
+     text: Text to check.
+    :return: True if `text` is a command, else False.
+    """
+    return text.startswith('/')
+
+
+# extract_command
+def extract_command(text):
+    """
+    Extracts the command from `text` (minus the '/') if `text` is a command (see is_command).
+    If `text` is not a command, this function returns None.
+
+    Examples:
+    extract_command('/help'): 'help'
+    extract_command('/help@BotName'): 'help'
+    extract_command('/search black eyed peas'): 'search'
+    extract_command('Good day to you'): None
+
+     text: String to extract the command from
+    :return: the command if `text` is a command (according to is_command), else None.
+    """
+    return text.split()[0].split('@')[0][1:] if is_command(text) else None
+
+
+# split_string
+def split_string(text, chars_per_string):
+    """
+    Splits one string into multiple strings, with a maximum amount of `chars_per_string` characters per string.
+    This is very useful for splitting one giant message into multiples.
+
+     text: The text to split
+     chars_per_string: The number of characters per line the text is split into.
+    :return: The splitted text as a list of strings.
+    """
+    return [text[i:i + chars_per_string] for i in range(0, len(text), chars_per_string)]
+
+
+# or_set
+def or_set(self):
+    self._set()
+    self.changed()
+
+
+# or_clear
+def or_clear(self):
+    self._clear()
+    self.changed()
+
+
+# orify
+def orify(e, changed_callback):
+    e._set = e.set
+    e._clear = e.clear
+    e.changed = changed_callback
+    e.set = lambda: or_set(e)
+    e.clear = lambda: or_clear(e)
+
+
+# OrEvent
+def OrEvent(*events):
+    or_event = threading.Event()
+
+    def changed():
+        bools = [e.is_set() for e in events]
+        if any(bools):
+            or_event.set()
+        else:
+            or_event.clear()
+
+    def busy_wait():
+        while not or_event.is_set():
+            or_event._wait(3)
+
+    for e in events:
+        orify(e, changed)
+    or_event._wait = or_event.wait
+    or_event.wait = busy_wait
+    changed()
+    return or_event
+
+
+# extract_arguments
+def extract_arguments(text):
+    """
+    Returns the argument after the command.
+
+    Examples:
+    extract_arguments("/get name"): 'name'
+    extract_arguments("/get"): ''
+    extract_arguments("/get@botName name"): 'name'
+
+     text: String to extract the arguments from a command
+    :return: the arguments if `text` is a command (according to is_command), else None.
+    """
+    regexp = re.compile(r"/\w*(@\w*)*\s*([\s\S]*)", re.IGNORECASE)
+    result = regexp.match(text)
+    return result.group(2) if is_command(text) else None
+
+
 # per_thread
 def per_thread(key, construct_value, reset=False):
     if reset or not hasattr(thread_local, key):
@@ -121,3 +273,8 @@ def per_thread(key, construct_value, reset=False):
         setattr(thread_local, key, value)
 
     return getattr(thread_local, key)
+
+
+# generate_random_token
+def generate_random_token():
+    return ''.join(random.sample(string.ascii_letters, 16))
