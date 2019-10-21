@@ -9,6 +9,8 @@ except ImportError:
 
 CONNECT_TIMEOUT = 3.5
 READ_TIMEOUT = 9999
+
+
 def _make_requests(token, make=None, verbs=None, method=None, params=None, files=None, chatid=None):
     '''
     Makes a request to the TamTam API.
@@ -35,26 +37,33 @@ def _make_requests(token, make=None, verbs=None, method=None, params=None, files
     if files and format_header_param:
         fields.format_header_param = _no_encode(format_header_param)
     if params:
-        if 'timeout' in params: read_timeout = params['timeout'] + 10
-        if 'connect-timeout' in params: connect_timeout = params['connect-timeout'] + 10
+        if 'timeout' in params:
+            read_timeout = params['timeout'] + 10
+        if 'connect-timeout' in params:
+            connect_timeout = params['connect-timeout'] + 10
 
     if make == 'basic':
         base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
         make_request = base_url.format(method, token)
         if verbs == 'delete':
-            r = requests.delete(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.delete(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'get':
-            r = requests.get(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.get(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'patch':
-            r = requests.patch(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.patch(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'post':
-            r = requests.post(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.post(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'put':
-            r = requests.put(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.put(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         else:
             raise TypeError(f"verbs '{verbs}' type Error!!!")
@@ -63,19 +72,24 @@ def _make_requests(token, make=None, verbs=None, method=None, params=None, files
         base_url = 'https://botapi.tamtam.chat/{0}/{1}?access_token={2}'
         make_request = base_url.format(method, chatid, token)
         if verbs == 'delete':
-            r = requests.delete(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.delete(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'get':
-            r = requests.get(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.get(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'patch':
-            r = requests.patch(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.patch(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'post':
-            r = requests.post(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.post(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         elif verbs == 'put':
-            r = requests.put(make_request, params=params, files=files, timeout=(connect_timeout, read_timeout), proxy=None)
+            r = requests.put(make_request, params=params, files=files, timeout=(
+                connect_timeout, read_timeout), proxy=None)
             return _check_request(token, r, make, verbs)
         else:
             raise TypeError(f"verbs '{verbs}' type Error!!!")
@@ -114,6 +128,8 @@ def _check_request(token, r, make, verbs):
         raise ValueError('Error Unspecified!!!')
 
 # _no_encode
+
+
 def _no_encode(func):
     def wrapper(key, val):
         if key == 'filename':
@@ -125,6 +141,8 @@ def _no_encode(func):
 
 # bots
 # Get current bot info
+
+
 def get_me(token):
     '''
     HTTP_verbs='get'
@@ -150,6 +168,8 @@ def get_me(token):
     return _make_requests(token, make='basic', verbs='get', method='me')
 
 # Edit current bot info
+
+
 def patch_me(token, name=None, username=None, description=None, commands=None, photo=None):
     '''
     HTTP_verbs='patch'
@@ -205,11 +225,15 @@ def patch_me(token, name=None, username=None, description=None, commands=None, p
 
 # Chats
 # get all chats
+
+
 def get_chats(token, count=None, marker=None):
     '''
+    HTTP_verbs='get'
+    request_url='https://botapi.tamtam.chat/chats'
     Returns information about chats that bot participated in: 
         a result list and marker points to the next page
-    QUERY PARAMETERS:
+    QUERY PARAMETERS: application/json
     {
         count:(optional, integer [1..100] default 50, numaber of chats requested)
         marker:(optional, integer, points to next data page, null for the first page)
