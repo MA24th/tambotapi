@@ -788,3 +788,56 @@ def get_messages(token, chat_id=None, message_ids=None, chat_from=None, to=None,
     logger.debug("The server returned: '{0}'".format(
         result.text.encode('utf8')))
     return _check_request(result, method)
+
+
+def send_message(token, chat_id=None, user_id=None, text=None, attachments=None, link=None, notify=None):
+    '''send message
+    HTTP_verbs='post'
+    request_url='https://botapi.tamtam.chat/messages?access_token={}'    
+    Sends a message to a chat. 
+    As a result for this method new message identifier returns.
+    QUERY PARAMETERS:
+    {
+        user_id:(optional, integer, fill this parameter if you want to send message to user)
+        chat_id:(optional, integer, fill this if you send message to chat)
+    }
+    REQUEST BODY SCHEMA: application/json
+    {
+       text:(string <=4000 charatcters, message text)
+       attachments:(array of object, messsage attachments)
+       link:(object, link to message)
+       notify:(boolean, default true, if false chat participats wouldn't be notified) 
+    }
+    RESPONSE: application/json
+    {
+        message:(object message, message in chat)
+    }
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'post'
+    method = r'messages'
+    base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
+    request_url = base_url.format(method, token)
+
+    payload = {}
+    if chat_id:
+        payload['chatId'] = chat_id
+    if user_id:
+        payload['user_id'] = user_id
+    if text:
+        payload['text'] = text
+    if attachments:
+        payload['attachments'] = attachments
+    if link:
+        payload['link'] = link
+    if notify:
+        payload['notify'] = notify
+
+    logger.debug("Request: method={0} url={1} params={2}".format(
+        method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload,
+                                        timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(
+        result.text.encode('utf8')))
+    return _check_request(result, method)    
