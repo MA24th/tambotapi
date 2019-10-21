@@ -14,6 +14,8 @@ from tambotapi import util
 
 CONNECT_TIMEOUT = 3.5
 READ_TIMEOUT = 9999
+
+logger = tambotapi.logger
 proxy = None
 
 
@@ -21,7 +23,7 @@ def _get_req_session(reset=False):
     return util.per_thread('req_session', lambda: requests.session(), reset)
 
 
-def _make_requests(token, make=None, method=None, chatId=None,  verbs=None, params=None, files=None):
+def _make_requests(token, make=None, verbs=None, method=None, chatId=None, params=None, files=None):
     '''
     Makes a request to the TamTam API.
     token: The bot's API token. (Created with @PrimeBot)
@@ -60,55 +62,54 @@ def _make_requests(token, make=None, method=None, chatId=None,  verbs=None, para
 
     if make == 'basic':
         base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
-        make_request = base_url.format(method, token)
-        r = _get_req_session().request(verbs, make_request, params=params, files=files,
-                                       timeout=(connect_timeout, read_timeout), proxies=proxy)
-        return _check_request(token, r, make, verbs)
+        request_url = base_url.format(method, token)
+        logger.debug("Request: method={0} url={1} params={2} files={3}".format(method, request_url, params, files))
+        result = _get_req_session().request(verbs, request_url, params=params, files=files,
+                                            timeout=(connect_timeout, read_timeout), proxies=proxy)
+        logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+        return _check_request(result, method)
 
     elif make == 'chats':
         base_url = 'https://botapi.tamtam.chat/{0}/{1}?access_token={2}'
-        make_request = base_url.format(method, chatId, token)
-        r = _get_req_session().request(verbs, make_request, params=params, files=files,
-                                       timeout=(connect_timeout, read_timeout), proxies=proxy)
-        return _check_request(token, r, make, verbs)
-        
+        request_url = base_url.format(method, chatId, token)
+        logger.debug("Request: method={0} url={1} params={2} files={3}".format(method, request_url, params, files))
+        result = _get_req_session().request(verbs, request_url, params=params, files=files,
+                                            timeout=(connect_timeout, read_timeout), proxies=proxy)
+        logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+        return _check_request(result, method)
+
     else:
         raise TypeError(f"make '{make}' type Error!!!")
 
 
-def _check_request(token, r, make, verbs):
+def _check_request(result, method):
     '''
-    param:HTTP response codes
-        200 — successful operation
-        400 — invalid request
-        401 — authentication error
-        404 — resource not found
-        405 — method is not allowed
-        429 — the number of requests is exceeded
-        503 — service unavailable
+    Checks whether `result` is a valid API response.
+    A result is considered invalid if:
+        - The server returned an HTTP response code other than 200
+        - The content of the result is invalid JSON.
+        - The method call was unsuccessful (The JSON 'ok' field equals False)
+
+    :raises ApiException: if one of the above listed cases is applicable
+     method: The name of the method called
+     result: The returned result of the method request
+    :return: The result parsed to a JSON dictionary.
     '''
-    print(r.status_code)
-    if r.status_code == 200:
-        result_json = r.json()
-        return result_json
-    elif r.status_code == 400:
-        raise TypeError(f"Invalid Request, make={make} verbs={verbs}!!!")
-    elif r.status_code == 401:
-        raise TypeError(f"Authentication Error, token={token}!!!")
-    elif r.status_code == 404:
-        raise ValueError(f"Resource not found!!!")
-    elif r.status_code == 405:
-        raise ValueError(f"Method is not allowed!!!")
-    elif r.status_code == 429:
-        raise RuntimeError("The number of requests is exceeded!!!")
-    elif r.status_code == 503:
-        raise RuntimeError("Service Unavailable!!!")
-    else:
-        raise ValueError('Error Unspecified!!!')
+    if result.status_code != 200:
+        msg = 'The server returned HTTP {0} {1}. Response body:\n[{2}]' \
+            .format(result.status_code, result.reason, result.text.encode('utf8'))
+        raise ApiException(msg, method, result)
+
+    try:
+        result_dict = result.json()
+    except:
+        msg = 'The server returned an invalid JSON response. Response body:\n[{0}]' \
+            .format(result.text.encode('utf8'))
+        raise ApiException(msg, method, result)
+    return result_dict
+
 
 # _no_encode
-
-
 def _no_encode(func):
     def wrapper(key, val):
         if key == 'filename':
@@ -118,12 +119,24 @@ def _no_encode(func):
 
     return wrapper
 
-# bots
-# Get current bot info
+# ApiException
+class ApiException(Exception):
+    """
+    This class represents an Exception thrown when a call to the TamTam API fails.
+    In addition to an informative message, it has a `function_name` and a `result` attribute, which respectively
+    contain the name of the failed function and the returned result that made the function to be considered  as
+    failed.
+    """
+
+    def __init__(self, msg, function_name, result):
+        super(ApiException, self).__init__(
+            "A request to the TamTam API was unsuccessful. {0}".format(msg))
+        self.function_name = function_name
+        self.result = result
 
 
 def get_me(token):
-    '''
+    '''Get current bot info
     HTTP_verbs='get'
     request_url='https://botapi.tamtam.chat/me'
     Returns info about current bot. 
@@ -144,13 +157,11 @@ def get_me(token):
         description:(optional, sting <= 16000 characters, bot description)
         }
     '''
-    return _make_requests(token, make='basic', method='me', verbs='get')
-
-# Edit current bot info
+    return _make_requests(token, make='basic', verbs='get', method='me')
 
 
 def patch_me(token, name=None, username=None, description=None, commands=None, photo=None):
-    '''
+    '''Edit current bot info
     HTTP_verbs='patch'
     request_url='https://botapi.tamtam.chat/me'
     Edits current bot info. 
@@ -199,13 +210,11 @@ def patch_me(token, name=None, username=None, description=None, commands=None, p
         payload['commands'] = commands
     if photo:
         payload['photo'] = photo
-    return _make_requests(token, make='basic', method='me', verbs='patch', params=payload)
+    return _make_requests(token, make='basic', verbs='patch', method='me', params=payload)
 
-
-# Chats
-# get all chats
+ 
 def get_chats(token, count=None, marker=None):
-    '''
+    '''get all chats
     HTTP_verbs='get'
     request_url='https://botapi.tamtam.chat/chats'
     Returns information about chats that bot participated in: 
@@ -250,11 +259,9 @@ def get_chats(token, count=None, marker=None):
         payload['marker'] = marker
     return _make_requests(token, make='basic', method='chats', verbs='get', params=payload)
 
-# get chat
-
 
 def get_chat(token, chat_id):
-    '''
+    '''Get chat
     HTTP_verbs='get'
     request_url='https://botapi.tamtam.chat/chats/{chatId}'    
     Returns info about chat.
@@ -290,5 +297,123 @@ def get_chat(token, chat_id):
     return _make_requests(token, make='chats', method='chats', chatId=chat_id, verbs='get')
 
 
-print(get_me(token=r''))
-# get_chat(token=r'', 12334)
+def patch_chat(token, chat_id, icon, title):
+    '''Edit chat info
+    HTTP_verbs='patch'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}'    
+    Edits chat info: title, icon, etc…
+    PATH PARAMETERS: application/json
+    {
+        chatId:(integer, requested chat identifer)
+    }
+    REQUEST BODY SCHEMA: application/json
+    {
+        icon:(optional, object, Request to attach image. All fields are mutually exclusive
+            url:(optional, string, any external image url you want to attach)
+            token:(optional, string, token of any existing attachment)
+            photos:(optional, object, token were obtained after uploading images
+                property_name:(optional, object
+                    token:(string, Encoded information of uploaded imager))))
+        title:(optional, string [1..200]characters)
+    }
+    RESPONES: application/json
+    {
+        chat_id:(integer, chat identifer)
+        type:(any, Enum:'dialog', 'chat, 'channel', type of chat one of:)
+        status:(any, Enum:'active', 'removed', 'left', 'closed', 'suspended', chat status: active:bot is active member of chat, removed:bot was kicked, left:bot intentionallly left chat, closed:chat was closed)
+        title:(string, visible title of chat, can be null for dialogs)
+        icon:(object, icon of chat
+            url:(string, url of image))
+        last_event_time:(integer, time of last event occurred if chat)
+        participants_count:(integer, number of people in chat, always 2 for dialog chat type)
+        owner_id:(optional, integer, identifier of chat owner, visible only for chat admins)
+        participants:(optional, object, participants in chat with time of last activity, can be null when you request list of chats, visible for chat admins only
+            property_name:(optional, integer))
+        is_puplic:(boolean, is current chat publicly availabel, always false for dialogs)
+        link:(optional, string, link of chat if it is public)
+        description:(any, chat description)
+        dialog_with_user:(optional, object, another user in conversation for dialog type chats only
+            user_id:(integer, users identifier)
+            name:(string, users visible name)
+            username:(string, Unique public user name. Can be null if user is not accessible or it is not set)
+            avatar_url:(optional, string, url of avatar)
+            full_avatar_url:(optional, string, url of avatar of a bigger size))
+
+    }
+    '''
+    payload = {}
+    if icon:
+        payload['icon'] = icon
+    if title:
+        payload['title'] = title
+    return _make_requests(token, make='chats', verbs='patch', method='chats', chatId=chat_id, params=payload)
+
+
+def post_chat(token, chat_id, action):
+    '''Send Action
+    HTTP_verbs='post'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/actions'    
+    send bot action to chat
+    PATH PARAMTERS: application/json
+    {
+        chatId:(integer, chat identifer)
+    }
+    REQUEST BODY SCHEMA: application/json
+    {
+        action:(any, Enum:'typing_on', 'sending_photo', 'sending_video', 'sending_audio', 'sending_file', 'mark_seen'. different actions to send to chat members)
+    }
+    RESPONSE: application/json
+    {
+        success:(boolean, true if request was successful. false otherwise)
+        message:(optional, string, explanatory message if the result is not succesful)
+    }
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'post'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}/action?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+    payload = {'action': str(action)}
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, params=payload, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
+    
+    
+
+def get_chat_membership(token, chat_id):
+    '''Get Chat Membership
+    HTTP_verbs='get'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}/members/me'    
+    returns chat membership info for current bot
+    PATH PARAMTERS: application/json
+    {
+        chatId:(integer, chat identifier)
+    }
+    RESPONSE: application/json
+    {
+        user_id:(intger, user identifier)
+        name:(string, user visible name)
+        username:(string, Unique public user name. Can be null if user is not accessible or it is not set)
+        avatar_url:(optional, string, URL of avatar)
+        full_avatar_url:(optional, string, URL of avatar of a bigger size)
+        last_access_time:(integer)
+        is_owner:(boolean)
+        is_admin:(boolean)
+        join_time:(integer)
+        permissions:(array of string, items Enum: 'read_all_messages', 'add_remove_members', 'add_admins', 'change_chat_info', 'pin_message', 'write'. permissions in chat if member is admin. null otherwise)
+    }    
+    '''
+    connect_timeout = CONNECT_TIMEOUT
+    read_timeout = READ_TIMEOUT
+    verbs = r'get'
+    method = r'chats'
+    base_url = 'https://botapi.tamtam.chat/{0}/{1}/member/me?access_token={2}'
+    request_url = base_url.format(method, chat_id, token)
+
+    logger.debug("Request: method={0} url={1} params={2}".format(method, request_url, payload))
+    result = _get_req_session().request(verbs, request_url, timeout=(connect_timeout, read_timeout), proxies=proxy)
+    logger.debug("The server returned: '{0}'".format(result.text.encode('utf8')))
+    return _check_request(result, method)
