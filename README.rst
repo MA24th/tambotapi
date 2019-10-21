@@ -16,7 +16,7 @@ There are two ways to install the framework:
 
     ``$ git clone https://github.com/ma24th/tambotapi.git``
 
-    ``$ cd telebotapi``
+    ``$ cd tambotapi``
 
     ``$ python setup.py install``
 
@@ -37,4 +37,4 @@ Get help. Discuss. Chat.
 
 Join the GRID9 Channel (https://tt.me/grid9)
 
-We now have a Telegram Chat Group as well! Keep yourself up to date with API changes, and join it (https://tt.me/grid9c).
+We now have a Telegram Chat Group as well! Keep yourself up to date with API changes, and join it (https://tt.me/grid9x).
