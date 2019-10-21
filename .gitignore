@@ -3,3 +3,5 @@
 .pytest_*
 tests/__pycache__
 data
+tambotapi/__pycache__
+tambotapi.egg-info*
