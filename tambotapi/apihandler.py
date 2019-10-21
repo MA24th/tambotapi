@@ -1,5 +1,6 @@
 import requests
 import json
+
 try:
     from requests.packages.urllib3 import fields
 
@@ -7,22 +8,33 @@ try:
 except ImportError:
     format_header_param = None
 
+import tambotapi
+#from tambotapi import types
+from tambotapi import util
+
 CONNECT_TIMEOUT = 3.5
 READ_TIMEOUT = 9999
+proxy = None
 
 
-def _make_requests(token, make=None, verbs=None, method=None, params=None, files=None, chatid=None):
+def _get_req_session(reset=False):
+    return util.per_thread('req_session', lambda: requests.session(), reset)
+
+
+def _make_requests(token, make=None, method=None, chatId=None,  verbs=None, params=None, files=None):
     '''
     Makes a request to the TamTam API.
     token: The bot's API token. (Created with @PrimeBot)
-    params: Optional parameters. Should be a dictionary with key-value pairs.
-    files: Optional files.
+    make:
+        -basic: base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
+        -chats: 'https://botapi.tamtam.chat/{0}/{1}?access_token={2}'
+            -chadId chats: identifier
     HTTP verbs:
-        DELETE — deleting resources
-        GET — getting resources, parameters are transmitted via URL
-        PATCH — patching resources
-        POST — creation of resources (for example, sending new messages)
-        PUT — editing resources
+        -delete: deleting resources
+        -get: getting resources, parameters are transmitted via URL
+        -patch: patching resources
+        -post: creation of resources (for example, sending new messages)
+        -put: editing resources
     BOT method: Name of the API method to be called
         me
         chats 
@@ -32,8 +44,12 @@ def _make_requests(token, make=None, verbs=None, method=None, params=None, files
         subscriptions
         updates
         upload
+    params: Optional parameters. Should be a dictionary with key-value pairs.
+    files: Optional files.
     :return: The result parsed to a JSON dictionary.
     '''
+    read_timeout = READ_TIMEOUT
+    connect_timeout = CONNECT_TIMEOUT
     if files and format_header_param:
         fields.format_header_param = _no_encode(format_header_param)
     if params:
@@ -45,54 +61,17 @@ def _make_requests(token, make=None, verbs=None, method=None, params=None, files
     if make == 'basic':
         base_url = 'https://botapi.tamtam.chat/{0}?access_token={1}'
         make_request = base_url.format(method, token)
-        if verbs == 'delete':
-            r = requests.delete(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        elif verbs == 'get':
-            r = requests.get(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        elif verbs == 'patch':
-            r = requests.patch(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        elif verbs == 'post':
-            r = requests.post(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        elif verbs == 'put':
-            r = requests.put(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        else:
-            raise TypeError(f"verbs '{verbs}' type Error!!!")
+        r = _get_req_session().request(verbs, make_request, params=params, files=files,
+                                       timeout=(connect_timeout, read_timeout), proxies=proxy)
+        return _check_request(token, r, make, verbs)
 
-    elif make == 'advns':
+    elif make == 'chats':
         base_url = 'https://botapi.tamtam.chat/{0}/{1}?access_token={2}'
-        make_request = base_url.format(method, chatid, token)
-        if verbs == 'delete':
-            r = requests.delete(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        elif verbs == 'get':
-            r = requests.get(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        elif verbs == 'patch':
-            r = requests.patch(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        elif verbs == 'post':
-            r = requests.post(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        elif verbs == 'put':
-            r = requests.put(make_request, params=params, files=files, timeout=(
-                connect_timeout, read_timeout), proxy=None)
-            return _check_request(token, r, make, verbs)
-        else:
-            raise TypeError(f"verbs '{verbs}' type Error!!!")
+        make_request = base_url.format(method, chatId, token)
+        r = _get_req_session().request(verbs, make_request, params=params, files=files,
+                                       timeout=(connect_timeout, read_timeout), proxies=proxy)
+        return _check_request(token, r, make, verbs)
+        
     else:
         raise TypeError(f"make '{make}' type Error!!!")
 
@@ -165,7 +144,7 @@ def get_me(token):
         description:(optional, sting <= 16000 characters, bot description)
         }
     '''
-    return _make_requests(token, make='basic', verbs='get', method='me')
+    return _make_requests(token, make='basic', method='me', verbs='get')
 
 # Edit current bot info
 
@@ -220,13 +199,11 @@ def patch_me(token, name=None, username=None, description=None, commands=None, p
         payload['commands'] = commands
     if photo:
         payload['photo'] = photo
+    return _make_requests(token, make='basic', method='me', verbs='patch', params=payload)
 
-    return _make_requests(token, make='basic', verbs='patch', method='me', params=payload)
 
 # Chats
 # get all chats
-
-
 def get_chats(token, count=None, marker=None):
     '''
     HTTP_verbs='get'
@@ -271,4 +248,47 @@ def get_chats(token, count=None, marker=None):
         payload['count'] = count
     if marker:
         payload['marker'] = marker
-    return _make_requests(token, make='basic', verbs='get', method='chats', params=payload)
+    return _make_requests(token, make='basic', method='chats', verbs='get', params=payload)
+
+# get chat
+
+
+def get_chat(token, chat_id):
+    '''
+    HTTP_verbs='get'
+    request_url='https://botapi.tamtam.chat/chats/{chatId}'    
+    Returns info about chat.
+    PATH PARAMETERS: application/json
+    {
+        chatId:(integer, requested chat identifer)
+    }
+    RESPONES: application/json
+    {
+        chat_id:(integer, chat identifer)
+        type:(any, Enum:'dialog', 'chat, 'channel', type of chat one of:)
+        status:(any, Enum:'active', 'removed', 'left', 'closed', 'suspended', chat status: active:bot is active member of chat, removed:bot was kicked, left:bot intentionallly left chat, closed:chat was closed)
+        title:(string, visible title of chat, can be null for dialogs)
+        icon:(object, icon of chat
+            url:(string, url of image))
+        last_event_time:(integer, time of last event occurred if chat)
+        participants_count:(integer, number of people in chat, always 2 for dialog chat type)
+        owner_id:(optional, integer, identifier of chat owner, visible only for chat admins)
+        participants:(optional, object, participants in chat with time of last activity, can be null when you request list of chats, visible for chat admins only
+            property_name:(optional, integer))
+        is_puplic:(boolean, is current chat publicly availabel, always false for dialogs)
+        link:(optional, string, link of chat if it is public)
+        description:(any, chat description)
+        dialog_with_user:(optional, object, another user in conversation for dialog type chats only
+            user_id:(integer, users identifier)
+            name:(string, users visible name)
+            username:(string, Unique public user name. Can be null if user is not accessible or it is not set)
+            avatar_url:(optional, string, url of avatar)
+            full_avatar_url:(optional, string, url of avatar of a bigger size))
+
+    }
+    '''
+    return _make_requests(token, make='chats', method='chats', chatId=chat_id, verbs='get')
+
+
+print(get_me(token=r''))
+# get_chat(token=r'', 12334)
