@@ -14,7 +14,7 @@ try:
 except ImportError:
     import queue as Queue
 
-logger = logging.getLogger('telebotapi')
+logger = logging.getLogger('tambotapi')
 
 thread_local = threading.local()
 
